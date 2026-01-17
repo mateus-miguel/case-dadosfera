@@ -93,10 +93,66 @@ Nesta etapa, o pipeline utiliza inteligência artificial para transitar de um da
 
 ---
 
+## 🧠 Enriquecimento Semântico (ETL 3)
+
+Esta é a etapa central de inteligência do pipeline. Nela, o conteúdo textual limpo é transformado em dados estruturados de alto valor, utilizando o modelo **GPT-4o-mini** para extrair informações específicas baseadas no esquema definido anteriormente.
+
+### 📋 Detalhes do Processo
+
+1.  **Orquestração de Lotes (Batch Processing):**
+    * Conforme ilustrado no diagrama `Batch LLM.png`, o processamento não é feito um a um, o que seria ineficiente. Os produtos são agrupados em **lotes de 10 a 20 itens** por chamada de API.
+    * **Objetivo:** Maximizar o uso da janela de contexto do modelo e reduzir a latência total do pipeline.
+
+2.  **Estratégia de Resiliência e Salvamento Incremental:**
+    * Dado o volume massivo de dados, o script foi desenhado para ser "stateful". Os resultados de cada lote enriquecido são gravados imediatamente ou em intervalos regulares no S3.
+    * **Benefício:** Se houver uma interrupção na conexão ou limite de taxa (rate limit), o progresso não é perdido. O pipeline pode ser reiniciado a partir do último ponto de salvamento.
+
+3.  **Extração Guiada por Contexto:**
+    * O prompt enviado ao LLM inclui o `schema.json` gerado na etapa 2. Isso força a IA a devolver apenas os atributos desejados, seguindo rigorosamente os tipos de dados (String, Float, Integer) e descrições técnicas.
+    * **Ação:** O modelo atua como um "parser" inteligente, identificando características como voltagem, dimensões, marca e material dentro de descrições muitas vezes confusas.
+
+4.  **Monitoramento de Performance:**
+    * Implementação de barras de progresso (`tqdm`) para acompanhar o tempo médio de resposta por produto (aprox. 12s por iteração de lote) e estimar o tempo total de conclusão para a base de 1 milhão de produtos.
+
+### 🛠️ Especificações Técnicas
+* **Inputs:** `s3://dadosfera-datalake/products_clean.json` e `schema.json`.
+* **Output:** `s3://dadosfera-datalake/products_enriched.json` (Versão incremental).
+* **Motor de IA:** OpenAI `gpt-4o-mini`.
+* **Principais bibliotecas:** `openai`, `boto3`, `json`, `tqdm`.
+
+---
+
+## 📊 EDA e Análise Visual
+
+Após o enriquecimento dos dados via LLM, esta etapa final foca na extração de inteligência e validação da qualidade do pipeline. O objetivo é transformar os arquivos JSON estruturados em insights visuais e métricas de consistência.
+
+### 📋 Detalhes do Processo
+
+1.  **Carregamento e Unificação de Dados Enriquecidos:**
+    * O script consome os diversos arquivos `products_enriched.json` gerados pelo processo de batching no S3.
+    * **Ação:** Consolidação em algumas Series Pandas para análise estatística de certos atributos. Alternativa seria consolidação em um único DataFrame Pandas (mais elaborado e demorado).
+
+2.  **Normalização de Atributos Extraídos:**
+    * Como o LLM pode extrair valores em diferentes formatos, o script realiza uma normalização final (ex: converter 'EUA', 'US' e 'North America' em formatos únicos como 'United States').
+    * **Foco:** Garantir que os atributos descobertos pelo `schema.json` sejam comparáveis graficamente.
+
+3.  **Visualizações Gráficas:**
+    * **Distribuição de Países de Origem:** Gráficos de barras mostrando a quantidade de países que mais produzem os produtos.
+    * **Pie Chart de Categorias:** Análise de porcentagem de macro-categorias às quais os produtos pertencem, filtradas das categorias geradas pelo LLM.
+    * **Gráfico de Barras Horizontais de Garantias:** Avaliação dos tempos de garantias mais ofertados para os produtos do dataset enriquecido.
+
+### 🛠️ Especificações Técnicas
+* **Input:** `s3://dadosfera-datalake/products_enriched.json` ou `s3://dadosfera-datalake/products_enriched_batch<number>.json`
+* **Output:** Dashboard de visualizações e relatório de qualidade.
+* **Principais bibliotecas:** `pandas`, `matplotlib`, `seaborn`, `boto3`.
+* **Destaque:** Uso de técnicas de filtragem para lidar com a memória do Colab ao processar o volume massivo de dados enriquecidos.
+
+---
+
 ## 🛠️ Stack Tecnológica
 
 * **Linguagem:** Python (Executado via Google Colab).
-* **Orquestração de Dados:** Boto3 (Integração com AWS S3).
+* **Orquestração de Dados:** OS, Boto3 (Integração com AWS S3).
 * **Inteligência Artificial:** OpenAI API (Modelo: `gpt-4o-mini`).
 * **Processamento & Análise:** Pandas, JSONL, Matplotlib, Seaborn.
 * **Armazenamento:** AWS S3 Bucket (`dadosfera-datalake`).
