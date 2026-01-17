@@ -61,6 +61,38 @@ O objetivo desta etapa é realizar o "saneamento" dos dados. Trabalhar com arqui
 
 ---
 
+## 🔍 Descoberta de Atributos (ETL 2)
+
+Nesta etapa, o pipeline utiliza inteligência artificial para transitar de um dado semi-estruturado para um esquema (schema) rigorosamente definido. Em vez de mapear manualmente centenas de possíveis colunas, o processo utiliza o modelo **GPT-4o-mini** para inferir a estrutura ideal com base no conteúdo real dos produtos.
+
+### 📋 Detalhes do Processo
+
+1.  **Amostragem Inteligente:**
+    * O script consome uma amostra representativa do arquivo `products_clean.json` (armazenado no S3). Essa amostra é enviada ao LLM para que ele entenda a diversidade de categorias e propriedades presentes na base.
+
+2.  **Engenharia de Prompt e Inferência:**
+    * O LLM é instruído a identificar atributos técnicos (como voltagem, cor, material, dimensões, marca) que são recorrentes nas descrições.
+    * O modelo retorna não apenas o nome do atributo, mas também o **tipo de dado** (string, float, integer) e uma **descrição funcional** do que aquele campo representa.
+
+3.  **Extração via Regex (Expressões Regulares):**
+    * Como a saída de um LLM pode conter textos explicativos, o script utiliza **Regex** (`re.findall`) para capturar com precisão os padrões de atributos, tipos e descrições dentro da resposta bruta da API.
+    * **Lógica de Mapeamento:** Um dicionário `type_mapping` é utilizado para converter as sugestões de tipos do LLM (ex: "texto", "número") em tipos Python/JSON válidos (`str`, `float`, `int`).
+
+4.  **Construção do Schema Dinâmico:**
+    * O script consolida uma estrutura base fixa (contendo `id`, `title` e `text`) e anexa a ela todos os novos atributos "descobertos" pela IA.
+    * Isso garante que o pipeline seja flexível: se a base de produtos mudar de "Eletrônicos" para "Moda", o schema se adaptará automaticamente sem alteração de código.
+
+5.  **Persistência do Contrato de Dados:**
+    * O esquema final é salvo no AWS S3 como `schema.json` (ou `schema_v2.json`). Este arquivo servirá como o guia mestre para a etapa subsequente de enriquecimento.
+
+### 🛠️ Especificações Técnicas
+* **Modelo:** `gpt-4o-mini` (OpenAI).
+* **Parsing:** Biblioteca `re` (Regex) para tratamento de strings.
+* **Tipagem:** Conversão dinâmica via `type_mapping.get(attr_type.lower(), str)`.
+* **Output:** `s3://dadosfera-datalake/schema_v2.json`.
+
+---
+
 ## 🛠️ Stack Tecnológica
 
 * **Linguagem:** Python (Executado via Google Colab).
