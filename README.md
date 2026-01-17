@@ -29,6 +29,38 @@ O processo está dividido em quatro etapas principais, conforme ilustrado no dia
 
 ---
 
+## 🧼 Limpeza e Normalização (ETL 1)
+
+O objetivo desta etapa é realizar o "saneamento" dos dados. Trabalhar com arquivos massivos (mais de 1 milhão de registros) em formatos semi-estruturados como `.jsonl` exige um tratamento robusto contra erros de sintaxe e registros incompletos que poderiam comprometer o desempenho do LLM ou gerar custos desnecessários.
+
+### 📋 Detalhes do Processo
+
+1.  **Leitura Resiliente (Tratamento de Erros de Sintaxe):**
+    * O arquivo original `products_raw.jsonl` continha inconsistências de formatação (como aspas não fechadas).
+    * **Solução:** Implementação de um bloco `try-except` com `json.JSONDecodeError`. Isso permite que o script ignore linhas corrompidas e continue o processamento sem interromper o pipeline, garantindo a integridade da ingestão.
+
+2.  **Filtragem de Atributos Essenciais:**
+    * Para que o enriquecimento semântico funcione, o produto **precisa** ter conteúdo textual. 
+    * **Ação:** Remoção automática de qualquer registro onde os campos `title` (título) ou `text` (descrição/corpo) estivessem vazios ou nulos.
+
+3.  **Normalização de Codificação:**
+    * Forçamento do padrão `utf-8` na leitura e escrita para evitar erros de caracteres especiais (acentuação e símbolos comerciais), comuns em bases de produtos brasileiros.
+
+4.  **Gestão de Volume e Amostragem:**
+    * Dada a escala de 1M+ de produtos, o script foi configurado para segmentar os dados (ex: processando os primeiros 100.000 registros para validação inicial), permitindo testes de custo-benefício antes do processamento total via API da OpenAI.
+
+5.  **Persistência no Data Lake (AWS S3):**
+    * O resultado limpo é exportado para o arquivo `products_clean.json`.
+    * O upload é feito via biblioteca `boto3` diretamente para o bucket `dadosfera-datalake`, servindo como a "Single Source of Truth" (Fonte Única da Verdade) para os scripts subsequentes de LLM.
+
+### 🛠️ Especificações Técnicas
+* **Input:** `s3://dadosfera-datalake/products_raw.jsonl`
+* **Output:** `s3://dadosfera-datalake/products_clean.json`
+* **Principais bibliotecas:** `json`, `boto3`, `os`.
+* **Lógica de Filtro:** `if doc['title'] != '' and doc['text'] != '':`
+
+---
+
 ## 🛠️ Stack Tecnológica
 
 * **Linguagem:** Python (Executado via Google Colab).
