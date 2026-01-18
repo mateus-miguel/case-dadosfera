@@ -109,10 +109,10 @@ Esta é a etapa central de inteligência do pipeline. Nela, o conteúdo textual 
 
 3.  **Extração Guiada por Contexto:**
     * O prompt enviado ao LLM inclui o `schema.json` gerado na etapa 2. Isso força a IA a devolver apenas os atributos desejados, seguindo rigorosamente os tipos de dados (String, Float, Integer) e descrições técnicas.
-    * **Ação:** O modelo atua como um "parser" inteligente, identificando características como voltagem, dimensões, marca e material dentro de descrições muitas vezes confusas.
+    * **Ação:** O modelo atua como um "parser" inteligente, identificando características como categoria, material, marca e *features* dentro de descrições muitas vezes confusas.
 
 4.  **Monitoramento de Performance:**
-    * Implementação de barras de progresso (`tqdm`) para acompanhar o tempo médio de resposta por produto (aprox. 12s por iteração de lote) e estimar o tempo total de conclusão para a base de 1 milhão de produtos.
+    * Implementação de barras de progresso (`tqdm`) para acompanhar o tempo médio de resposta por produto (aprox. 9min por iteração de lote) e estimar o tempo total de conclusão para a base de 1 milhão de produtos.
 
 ### 🛠️ Especificações Técnicas
 * **Inputs:** `s3://dadosfera-datalake/products_clean.json` e `schema.json`.
@@ -139,6 +139,7 @@ Após o enriquecimento dos dados via LLM, esta etapa final foca na extração de
 3.  **Visualizações Gráficas:**
     * **Distribuição de Países de Origem:** Gráficos de barras mostrando a quantidade de países que mais produzem os produtos.
     * **Pie Chart de Categorias:** Análise de porcentagem de macro-categorias às quais os produtos pertencem, filtradas das categorias geradas pelo LLM.
+    * **Gráfico de Barras Agrupado:** Análise de produtos a prova d'água agrupados em DataFrame com base nos países de origem.
     * **Gráfico de Barras Horizontais de Garantias:** Avaliação dos tempos de garantias mais ofertados para os produtos do dataset enriquecido.
 
 ### 🛠️ Especificações Técnicas
