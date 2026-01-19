@@ -1,0 +1,13 @@
+s3:/dadosfera-datalake/
+|
+|
+/gold/ --> products_enriched.json; products_enriched_batch<number>.json
+|
+|
+/silver/ --> products_clean.json
+|
+|
+/bronze/ --> products_raw.jsonl
+|
+|
+/metadata/ --> schema.json; logs
