@@ -36,7 +36,7 @@ O objetivo desta etapa é realizar o "saneamento" dos dados. Trabalhar com arqui
 ### 📋 Detalhes do Processo
 
 1.  **Leitura Resiliente (Tratamento de Erros de Sintaxe):**
-    * O arquivo original `products_raw.jsonl` continha inconsistências de formatação (como aspas não fechadas).
+    * O arquivo original `products_raw.jsonl` continha inconsistências de formatação (valores faltantes, linhas vazias).
     * **Solução:** Implementação de um bloco `try-except` com `json.JSONDecodeError`. Isso permite que o script ignore linhas corrompidas e continue o processamento sem interromper o pipeline, garantindo a integridade da ingestão.
 
 2.  **Filtragem de Atributos Essenciais:**
@@ -45,17 +45,18 @@ O objetivo desta etapa é realizar o "saneamento" dos dados. Trabalhar com arqui
 
 3.  **Normalização de Codificação:**
     * Forçamento do padrão `utf-8` na leitura e escrita para evitar erros de caracteres especiais (acentuação e símbolos comerciais), comuns em bases de produtos brasileiros.
+    * Normalização por dicionário remove aspas não fechadas, tipográficas “ ”, outros símbolos irrelevantes como *, ✔, ➤, ™, ® e trechos de marketing como "Product Description", "Next Page".
 
 4.  **Gestão de Volume e Amostragem:**
     * Dada a escala de 1M+ de produtos, o script foi configurado para segmentar os dados (ex: processando os primeiros 100.000 registros para validação inicial), permitindo testes de custo-benefício antes do processamento total via API da OpenAI.
 
 5.  **Persistência no Data Lake (AWS S3):**
     * O resultado limpo é exportado para o arquivo `products_clean.json`.
-    * O upload é feito via biblioteca `boto3` diretamente para o bucket `dadosfera-datalake`, servindo como a "Single Source of Truth" (Fonte Única da Verdade) para os scripts subsequentes de LLM.
+    * O upload é feito via biblioteca `boto3` diretamente para o bucket `dadosfera-datalake`, servindo como a "Single Source of Truth" (datalake) para os scripts subsequentes de LLM.
 
 ### 🛠️ Especificações Técnicas
-* **Input:** `s3://dadosfera-datalake/products_raw.jsonl`
-* **Output:** `s3://dadosfera-datalake/products_clean.json`
+* **Input:** `s3://dadosfera-datalake/bronze/products_raw.jsonl`
+* **Output:** `s3://dadosfera-datalake/silver/products_clean.json`
 * **Principais bibliotecas:** `json`, `boto3`, `os`.
 * **Lógica de Filtro:** `if doc['title'] != '' and doc['text'] != '':`
 
@@ -89,7 +90,7 @@ Nesta etapa, o pipeline utiliza inteligência artificial para transitar de um da
 * **Modelo:** `gpt-4o-mini` (OpenAI).
 * **Parsing:** Biblioteca `re` (Regex) para tratamento de strings.
 * **Tipagem:** Conversão dinâmica via `type_mapping.get(attr_type.lower(), str)`.
-* **Output:** `s3://dadosfera-datalake/schema_v2.json`.
+* **Output:** `s3://dadosfera-datalake/metadata/schema.json`.
 
 ---
 
@@ -115,8 +116,8 @@ Esta é a etapa central de inteligência do pipeline. Nela, o conteúdo textual 
     * Implementação de barras de progresso (`tqdm`) para acompanhar o tempo médio de resposta por produto (aprox. 9min por iteração de lote) e estimar o tempo total de conclusão para a base de 1 milhão de produtos.
 
 ### 🛠️ Especificações Técnicas
-* **Inputs:** `s3://dadosfera-datalake/products_clean.json` e `schema.json`.
-* **Output:** `s3://dadosfera-datalake/products_enriched.json` (Versão incremental).
+* **Inputs:** `s3://dadosfera-datalake/silver/products_clean.json` e `s3://dadosfera-datalake/metadata/schema.json`.
+* **Output:** `s3://dadosfera-datalake/gold/products_enriched.json` (Versão incremental).
 * **Motor de IA:** OpenAI `gpt-4o-mini`.
 * **Principais bibliotecas:** `openai`, `boto3`, `json`, `tqdm`.
 
@@ -143,7 +144,7 @@ Após o enriquecimento dos dados via LLM, esta etapa final foca na extração de
     * **Gráfico de Barras Horizontais de Garantias:** Avaliação dos tempos de garantias mais ofertados para os produtos do dataset enriquecido.
 
 ### 🛠️ Especificações Técnicas
-* **Input:** `s3://dadosfera-datalake/products_enriched.json` ou `s3://dadosfera-datalake/products_enriched_batch<number>.json`
+* **Input:** `s3://dadosfera-datalake/gold/products_enriched.json` ou `s3://dadosfera-datalake/gold/products_enriched_batch<number>.json`
 * **Output:** Dashboard de visualizações e relatório de qualidade.
 * **Principais bibliotecas:** `pandas`, `matplotlib`, `seaborn`, `boto3`.
 * **Destaque:** Uso de técnicas de filtragem para lidar com a memória do Colab ao processar o volume massivo de dados enriquecidos.
