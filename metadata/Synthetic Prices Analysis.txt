@@ -1,0 +1,14 @@
+Total de preços coletados: 9989
+Preço mínimo: $ 15.04
+Preço máximo: $ 5013.75
+Preço médio: $ 507.58
+Preço mediano: $ 225.60
+
+Análise de Outliers (método IQR):
+Q1 (25%): 143.72
+Q3 (75%): 382.04
+IQR (Intervalo Interquartil): 238.32
+Limite inferior para outliers: -213.76
+Limite superior para outliers: 739.52
+Número de outliers identificados: 1492
+Outliers (5 primeiros): [740.36, 741.19, 750.25, 750.27, 752.47]
