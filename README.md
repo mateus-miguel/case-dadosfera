@@ -10,6 +10,8 @@ A solução foi desenhada para operar de forma modular, utilizando o **AWS S3** 
 
 O processo está dividido em quatro etapas principais, conforme ilustrado no diagrama `Dadosfera ETL LLM.png`:
 
+<img src='https://raw.githubusercontent.com/mateus-miguel/case-dadosfera/refs/heads/main/metadata/Dadosfera%20ETL%20LLM.png'/>
+
 1.  **Limpeza e Normalização (`ETL 1`):**
     * **Entrada:** `products_raw.jsonl` (Dados brutos).
     * **Processamento:** Limpeza de strings, tratamento de valores nulos e filtragem inicial.
