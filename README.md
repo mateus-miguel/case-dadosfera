@@ -144,6 +144,7 @@ Após o enriquecimento dos dados via LLM, esta etapa final foca na extração de
     * **Pie Chart de Categorias:** Análise de porcentagem de macro-categorias às quais os produtos pertencem, filtradas das categorias geradas pelo LLM.
     * **Gráfico de Barras Agrupado:** Análise de produtos a prova d'água agrupados em DataFrame com base nos países de origem.
     * **Gráfico de Barras Horizontais de Garantias:** Avaliação dos tempos de garantias mais ofertados para os produtos do dataset enriquecido.
+    * **Violin Plot de Preços:** Utilizando dados de macro-categoria e países de origem, a cada produto é atribuído um valor sintético de preço para análise da distribuição contínua de valores.
 
 ### 🛠️ Especificações Técnicas
 * **Input:** `s3://dadosfera-datalake/gold/products_enriched.json` ou `s3://dadosfera-datalake/gold/products_enriched_batch<number>.json`
